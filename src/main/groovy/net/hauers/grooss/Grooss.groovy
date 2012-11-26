@@ -14,7 +14,7 @@ class Grooss extends HTTPBuilder {
         "${System.getProperty( 'user.home' )}/.grooss-config.groovy" )
     def apiToken   = [:]
     def oauthToken = [:]
-        
+
     /**
      * Constructor.
      * configfile must exist 
@@ -23,7 +23,7 @@ class Grooss extends HTTPBuilder {
     
         super( apiURL )
         headers    = [ 'User-Agent' : 'Grooss/0.1 alpha', Accept : 'application/json' ]
-        def config = new ConfigSlurper().parse( configFile.toURL() )
+        def config = new ConfigSlurper().parse( configFile.toURI().toURL() )
         apiToken   = [ id    : config.grooss.tokens.api.id
                      , secret: config.grooss.tokens.api.secret ]
         oauthToken = [ id    : config.grooss.tokens.default?.id
@@ -52,7 +52,7 @@ class Grooss extends HTTPBuilder {
     }
     
     /**
-     * Testing that the api endpoint is there and the APIKey works
+     * Ping: the simplest method to verify that the server is accessible. Needs an apiKey only.
      */
     def ping() {
 

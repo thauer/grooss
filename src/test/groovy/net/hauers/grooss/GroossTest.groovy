@@ -1,39 +1,47 @@
 package net.hauers.grooss
 
-import groovy.util.GroovyTestCase
+import org.junit.Test
+import org.junit.BeforeClass
 
-class GroossTest extends GroovyTestCase {
+class GroossTest {
 
-    def grooss = null
-
-    void setUp() {
-        super.setUp()
+	static ConfigObject config = null
+	
+	@BeforeClass
+	static void initializeConfig() {
+		
+		try {
+			Class scriptClass = GroossTest.class.classLoader.loadClass( 'test-config' )
+			config = new ConfigSlurper().parse(scriptClass)
+		} catch( Exception e ){ e.printStackTrace() }
+		assert config
+	}
+	
+	@Test
+	void testingShouldWork() {
+		assert 1 == 1 
+	}
+	
+	@Test
+	void groossShouldRespondOKToPing() {
+		
+		assert config.grooss.tokens.api.id
+		def grooss = new Grooss( apiToken: [id: config.grooss.tokens.api.id ] )
+		assert grooss.ping() == "ok"
+	}
+	
+	@Test
+    void groossShouldReturnRequestTokenAndURL() {
         
-        grooss = new Grooss()
-    }
-
-    void testTestingShouldWork() {
-    
-        assert 1 == 1
-    }
-    
-    void testGroossClassShouldBeLoadable() {
-    
-        assertNotNull( Grooss.class )
-    }
-    
-    void testGroosShouldRespondOKToPing() {
-        
-        assert "ok" == grooss.ping()  
-    }
-    
-    void testGroossShouldReturnRequestTokenAndURL() {
-        
+		def grooss = new Grooss()
         assert grooss.oauthToken.secret
         assert grooss.oauthToken.id
     }
     
-    void testAccessTokenShouldFailUnauthorized() {
+	@Test
+    void accessTokenShouldFailUnauthorized() {
+		
+		def grooss = new Grooss()
         grooss.getRequestToken()
         grooss.getAccessToken().with {
             assert stat    == "fail"
@@ -41,7 +49,10 @@ class GroossTest extends GroovyTestCase {
         }
     }
     
-    void testDefaultAuthorizationShouldWork() {
+	@Test
+    void defaultAuthorizationShouldWork() {
+		
+		def grooss = new Grooss()		
         if( grooss.oauthToken.id )
             assert "ok" == grooss.checkAccessToken().stat
     }
