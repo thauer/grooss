@@ -18,11 +18,6 @@ class GroossTest {
 	}
 	
 	@Test
-	void testingShouldWork() {
-		assert 1 == 1 
-	}
-	
-	@Test
 	void groossShouldRespondOKToPing() {
 		
 		assert config.grooss.tokens.api.id

@@ -12,22 +12,23 @@ class Grooss extends HTTPBuilder {
 
     static File configFile = new File( 
         "${System.getProperty( 'user.home' )}/.grooss-config.groovy" )
-    def apiToken   = [:]
-    def oauthToken = [:]
+    def apiToken   = [ id:'', secret:'' ]
+    def oauthToken = [ id:'', secret:'' ]
 
     /**
      * Constructor.
-     * configfile must exist 
      */
     Grooss() {
     
         super( apiURL )
         headers    = [ 'User-Agent' : 'Grooss/0.1 alpha', Accept : 'application/json' ]
-        def config = new ConfigSlurper().parse( configFile.toURI().toURL() )
-        apiToken   = [ id    : config.grooss.tokens.api.id
-                     , secret: config.grooss.tokens.api.secret ]
-        oauthToken = [ id    : config.grooss.tokens.default?.id
-                     , secret: config.grooss.tokens.default?.secret ]
+		if( configFile.exists() ) {
+	        def config = new ConfigSlurper().parse( configFile.toURI().toURL() )
+	        apiToken   = [ id    : config.grooss.tokens.api.id
+	                     , secret: config.grooss.tokens.api.secret ]
+	        oauthToken = [ id    : config.grooss.tokens.default?.id
+	                     , secret: config.grooss.tokens.default?.secret ]
+		}
     }
     
     /**
@@ -41,7 +42,7 @@ class Grooss extends HTTPBuilder {
             , oauth_timestamp        : (int) System.currentTimeMillis() / 1000             
             , oauth_nonce            : RandomStringUtils.randomAscii( 10 )
             , oauth_signature_method : 'PLAINTEXT'
-            , oauth_signature        : "${apiToken.secret}&${oauthToken.secret ?: ''}"
+            , oauth_signature        : "${apiToken.secret}&${oauthToken.secret}"
             , oauth_consumer_key     : apiToken.id
             , oauth_token            : oauthToken.id ]
             + params ){ r, json -> 
@@ -56,7 +57,7 @@ class Grooss extends HTTPBuilder {
      */
     def ping() {
 
-        get( method: 'smugmug.service.ping').stat
+        get( method: 'smugmug.service.ping' ).stat
     }
     
     /**
@@ -70,7 +71,7 @@ class Grooss extends HTTPBuilder {
      */
     def getRequestToken() {
     
-        oauthToken        = [:]
+        oauthToken        = [ id: '', secret: '' ]
         def response      = get( method: 'smugmug.auth.getRequestToken' )
         oauthToken.secret = response.Auth?.Token?.Secret
         oauthToken.id     = response.Auth?.Token?.id
