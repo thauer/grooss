@@ -9,7 +9,7 @@ class GroossTest {
 	
 	@BeforeClass
 	static void initializeConfig() {
-		
+
 		try {
 			Class scriptClass = GroossTest.class.classLoader.loadClass( 'test-config' )
 			config = new ConfigSlurper().parse(scriptClass)

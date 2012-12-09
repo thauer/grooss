@@ -1,7 +1,5 @@
 package net.hauers.grooss
 
-@Grab( "org.codehaus.groovy.modules.http-builder:http-builder:0.6" )
-@Grab( "commons-lang:commons-lang:2.4" ) 
 import org.apache.commons.lang.RandomStringUtils
 import groovyx.net.http.HTTPBuilder
 
