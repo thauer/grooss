@@ -103,17 +103,49 @@ class Grooss extends HTTPBuilder {
 	
 	/**
      * Functional methods
-     *
-     * Albums:[ [id:, Key:, Title:, Category:[id:, Name:], SubCategory:[id:, Name:]],...]
-     */  
-    def getAlbums() {
+     */
+	
+	/**
+	 * Retrieves all albums. See smugmug.albums.get.
+	 * 
+	 * @return Albums:[ [id:, Key:, Title:, Category:[id:, Name:], SubCategory:[id:, Name:]],...]
+	 */
+	def getAlbums() {
         get( method: 'smugmug.albums.get' ).Albums
     }
-    
-    public static void main( String[] args ) {
+	
+	/**
+	 * Lists all images in an album
+	 * 
+	 * @param Required params are AlbumID and AlbumKey. See smugmug.images.get. 
+	 * @return An array of image hashmaps
+	 */
+	def getImages( Map params ) {
+		get( [ method: 'smugmug.images.get' ] + params ).Album.Images
+	}
+	
+	/**
+	 * Retrieves the details of a single image
+	 * 
+	 * @param params Required params are ImageID and ImageKey. See smugmug.images.getInfo. 
+	 * @return A hashmap of a single image
+	 */
+	def getImageInfo( Map params ) {
+		get( [ method: 'smugmug.images.getInfo'] + params ).Image
+	}
+	
+	/**
+	 * Downloads an image to a temporary file (with name suffix equals the original FileName)
+	 * @param params Required params are ImageID and ImageKey.
+	 * @return
+	 */
+	def downloadOriginal( Map image ) {
+	
+		if( ! image.FileName || ! image.OriginalURL )
+			image = getImageInfo( ImageID: image.id, ImageKey: image.Key)
 
-        new Grooss().albums.each{ 
-            println it.Title
-        }
-    }
+		def file = File.createTempFile("smug.", ".${image.FileName}" )
+		file.newOutputStream().with{ it << new URL( image.OriginalURL ).openStream(); close() }
+		file
+	}    
 }
