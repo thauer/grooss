@@ -1,7 +1,10 @@
 apply plugin: 'groovy'
+apply plugin: 'application'
+apply plugin: 'eclipse'
 
 group = 'net.hauers.grooss'
 version = '0.1'
+mainClassName = "net.hauers.grooss.Grooss"
 
 repositories {
     mavenCentral()
