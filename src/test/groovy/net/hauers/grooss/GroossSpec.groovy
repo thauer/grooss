@@ -1,10 +1,23 @@
 package net.hauers.grooss
 
 // @Grab(group='org.spockframework', module='spock-core', version='0.7-groovy-2.0')
-// @Grab(group='org.codehaus.groovy.modules.http-builder', module='http-builder', version= '0.6')
+// @Grab(group='org.codehaus.groovy.modules.http-builder', module='http-builder', version= '0.7.1')
 // @Grab(group='commons-lang', module= 'commons-lang', version= '2.4')
+// @Grab(group='org.apache.httpcomponents', module='httpmime', version='4.2.6') 
 
 import spock.lang.*
+
+import groovyx.net.http.HTTPBuilder
+import org.apache.http.entity.mime.MultipartEntity
+import org.apache.http.entity.FileEntity
+import org.apache.http.entity.mime.content.ByteArrayBody
+import static groovyx.net.http.Method.POST
+import static groovyx.net.http.ContentType.JSON
+
+import groovy.util.slurpersupport.NodeChild
+import groovy.xml.*
+import org.apache.commons.lang.RandomStringUtils
+
 
 class GroossSpec extends Specification {
 
@@ -16,7 +29,7 @@ class GroossSpec extends Specification {
 
     def defaultAuthorizationShouldWork() {
         
-        expect:
+        expect: "checkAccessToken verifies that authentication is properly configured"
         grooss.oauthToken.id
         "ok" == grooss.checkAccessToken().stat
     }
@@ -45,5 +58,66 @@ class GroossSpec extends Specification {
         md5sum == image.MD5Sum
         cleanup:
         file.delete()
-    }    
+    }
+
+    @Ignore
+    def "We can upload an image"() {
+
+//        def http = new HTTPBuilder( "http://localhost:8000" ) 
+        def http = new HTTPBuilder( "http://upload.smugmug.com/")
+        def response = http.request(POST) { req ->
+            uri.path = ''
+            headers.'Authorization' = """OAuth,
+            oauth_consumer_key=\"wvC8CH5jOwP6sPl8lxjnRpMi4krngGz4\",
+            oauth_token=\"444f3de6c8aa46fe392aa19741610cd4\",
+            oauth_signature_method=\"HMAC-SHA1\",
+            oauth_signature=\"24340403e58ce663c9119611626988a1&d601c944a7a8a0c7c28633922e6509ccac996b0d43eac991d001acd69f070efd\",
+            oauth_timestamp=\"${(int) System.currentTimeMillis() / 1000}\",
+            oauth_nonce=\"${RandomStringUtils.randomAscii( 10 )}\",
+            oauth_version=\"1.0\""""
+            headers.'X-Smug-Version' = '1.3.0'
+            headers.'X-Smug-AlbumID' = '4982718'
+            req.entity = new FileEntity(new File('/tmp/test.jpg'),'image/jpg')
+        }
+
+        println XmlUtil.serialize(response)
+
+        expect:
+        true
+    }
 }
+/*
+9.4.  PLAINTEXT
+
+The PLAINTEXT method does not provide any security protection and SHOULD only be used over a secure channel such as HTTPS. It does not use the Signature Base String.
+
+9.4.1.  Generating Signature
+
+oauth_signature is set to the concatenated encoded values of the Consumer Secret and 
+Token Secret, separated by a ‘&’ character (ASCII code 38), even if either secret is empty. 
+The result MUST be encoded again.
+
+These examples show the value of oauth_signature for Consumer Secret djr9rjt0jd78jf88 
+and 3 different Token Secrets:
+
+jjd999tj88uiths3:
+oauth_signature=djr9rjt0jd78jf88%26jjd999tj88uiths3
+jjd99$tj88uiths3:
+oauth_signature=djr9rjt0jd78jf88%26jjd99%2524tj88uiths3
+Empty:
+oauth_signature=djr9rjt0jd78jf88%26
+
+
+9.2.  HMAC-SHA1
+
+The HMAC-SHA1 signature method uses the HMAC-SHA1 signature algorithm as defined in [RFC2104] 
+where the Signature Base String is the text and the key is the concatenated values 
+(each first encoded per Parameter Encoding) of the Consumer Secret and Token Secret, 
+separated by an ‘&’ character (ASCII code 38) even if empty.
+
+9.2.1.  Generating Signature
+
+oauth_signature is set to the calculated digest octet string, 
+first base64-encoded per [RFC2045] section 6.8, then URL-encoded per Parameter Encoding.
+
+*/
