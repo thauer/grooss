@@ -1,9 +1,9 @@
 package net.hauers.grooss
 
-// @Grab(group='org.spockframework', module='spock-core', version='0.7-groovy-2.0')
-// @Grab(group='org.codehaus.groovy.modules.http-builder', module='http-builder', version= '0.7.1')
-// @Grab(group='commons-lang', module= 'commons-lang', version= '2.4')
-// @Grab(group='org.apache.httpcomponents', module='httpmime', version='4.2.6') 
+@Grab(group='org.spockframework', module='spock-core', version='0.7-groovy-2.0')
+@Grab(group='org.codehaus.groovy.modules.http-builder', module='http-builder', version= '0.7.1')
+@Grab(group='commons-lang', module= 'commons-lang', version= '2.4')
+@Grab(group='org.apache.httpcomponents', module='httpmime', version='4.2.6') 
 
 import spock.lang.*
 
@@ -17,6 +17,12 @@ import static groovyx.net.http.ContentType.JSON
 import groovy.util.slurpersupport.NodeChild
 import groovy.xml.*
 import org.apache.commons.lang.RandomStringUtils
+
+import javax.crypto.spec.SecretKeySpec
+import javax.crypto.Mac
+import java.security.SignatureException
+ 
+
 
 
 class GroossSpec extends Specification {
@@ -60,9 +66,19 @@ class GroossSpec extends Specification {
         file.delete()
     }
 
-    @Ignore
+    @IgnoreRest
     def "We can upload an image"() {
 
+        def api_secret = "24340403e58ce663c9119611626988a1"
+        def default_secret = "d601c944a7a8a0c7c28633922e6509ccac996b0d43eac991d001acd69f070efd"
+
+        def signature = hmac(new File('/tmp/test.jpg').text, 
+            "${api_secret}&${default_secret}" ).toString().bytes.encodeBase64().toString()
+
+//        auth_header = "${public_key}:${hmac(public_key, private_key)}".
+//                    toString().bytes.encodeBase64().toString()
+//con is a HttpURLConnection
+//con.setRequestProperty('X-Mashape-Authorization', auth_header)
 //        def http = new HTTPBuilder( "http://localhost:8000" ) 
         def http = new HTTPBuilder( "http://upload.smugmug.com/")
         def response = http.request(POST) { req ->
@@ -71,7 +87,7 @@ class GroossSpec extends Specification {
             oauth_consumer_key=\"wvC8CH5jOwP6sPl8lxjnRpMi4krngGz4\",
             oauth_token=\"444f3de6c8aa46fe392aa19741610cd4\",
             oauth_signature_method=\"HMAC-SHA1\",
-            oauth_signature=\"24340403e58ce663c9119611626988a1&d601c944a7a8a0c7c28633922e6509ccac996b0d43eac991d001acd69f070efd\",
+            oauth_signature=\"${signature}\",
             oauth_timestamp=\"${(int) System.currentTimeMillis() / 1000}\",
             oauth_nonce=\"${RandomStringUtils.randomAscii( 10 )}\",
             oauth_version=\"1.0\""""
@@ -84,6 +100,31 @@ class GroossSpec extends Specification {
 
         expect:
         true
+    }
+
+
+    def hmac(String data, String key) throws java.security.SignatureException
+    {
+        String result
+        
+        try {
+        
+            // get an hmac_sha1 key from the raw key bytes
+            SecretKeySpec signingKey = new SecretKeySpec(key.getBytes(), "HmacSHA1");
+            
+            // get an hmac_sha1 Mac instance and initialize with the signing key
+            Mac mac = Mac.getInstance("HmacSHA1");
+            mac.init(signingKey);
+            
+            // compute the hmac on input data bytes
+            byte[] rawHmac = mac.doFinal(data.getBytes());
+            result= rawHmac.encodeHex()
+        
+        } catch (Exception e) {
+            throw new SignatureException("Failed to generate HMAC : " + e.getMessage());
+        }
+     
+        return result
     }
 }
 /*
